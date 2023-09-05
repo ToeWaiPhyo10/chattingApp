@@ -10,6 +10,9 @@
   --str-chat__disabled-color: theme(colors.gray.200);
   --str-chat__cta-button-border-radius: theme(borderRadius.DEFAULT);
 }
+.dark .str-chat {
+  --str-chat__disabled-color: theme(colors.gray.600);
+}
 .str-chat * {
   font-family: inherit !important;
 }
