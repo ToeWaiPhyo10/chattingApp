@@ -7,6 +7,7 @@ import {
   Thread,
   Window,
 } from "stream-chat-react";
+import CustomChannelHeader from "./customChannelHeader";
 interface ChatChannelProps {
   show: boolean;
   hideChannelOnThread: boolean;
@@ -19,7 +20,7 @@ export default function ChatChannel({
     <div className={`h-full w-full ${show ? "block" : "hidden"}`}>
       <Channel>
         <Window hideOnThread={hideChannelOnThread}>
-          <ChannelHeader />
+          <CustomChannelHeader />
           <MessageList />
           <MessageInput />
         </Window>

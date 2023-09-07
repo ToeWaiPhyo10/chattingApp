@@ -9,6 +9,12 @@ import { Menu, X } from "lucide-react";
 import useWindowSize from "@/hooks/useWindowSize";
 import { mdBreakPoint } from "@/utils/tailwind";
 import { useTheme } from "../ThemeProvider";
+import { registerServerWorker } from "@/utils/serviceWorker";
+import {
+  getCurrentPushSubscription,
+  sendPushSubscriptionToServer,
+} from "@/notifications/pushService";
+import PushMessageListener from "./pushMessageListener";
 
 // const userId = "user_2UmhcCEdPiFOopLAHQPusH3d2EB";
 // const chatClient = StreamChat.getInstance(process.env.NEXT_PUBLIC_STREAM_KEY!);
@@ -20,8 +26,13 @@ import { useTheme } from "../ThemeProvider";
 //   name: "Channel #1",
 //   members: [userId],
 // });
+interface ChatPageProps {
+  searchParams: { channelId?: string };
+}
 const i18Instance = new Streami18n({ language: "en" });
-export default function ChatPage() {
+export default function ChatPage({
+  searchParams: { channelId },
+}: ChatPageProps) {
   const chatClient = useInitializeChatClient();
   const [chatSideBarOpen, setChatSideBarOpen] = useState(false);
   const windowSize = useWindowSize();
@@ -31,9 +42,40 @@ export default function ChatPage() {
   useEffect(() => {
     if (windowSize.width > mdBreakPoint) setChatSideBarOpen(false);
   }, [windowSize.width]);
+
+  useEffect(() => {
+    async function setUpServiceWorker() {
+      try {
+        await registerServerWorker();
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    setUpServiceWorker();
+  }, []);
+  useEffect(() => {
+    async function syncPushSubscription() {
+      try {
+        const subscription = await getCurrentPushSubscription();
+        if (subscription) {
+          await sendPushSubscriptionToServer(subscription);
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    syncPushSubscription();
+  }, []);
+
+  useEffect(() => {
+    if (channelId) {
+      history.replaceState(null, "", "/chat");
+    }
+  }, [channelId]);
   const handleSidebarOnClose = useCallback(() => {
     setChatSideBarOpen(false);
   }, []);
+
   if (!user || !chatClient) {
     return (
       <div className="flex h-screen items-center justify-center bg-gray-100 dark:bg-black">
@@ -69,6 +111,7 @@ export default function ChatPage() {
               user={user}
               show={isLargeScreen || chatSideBarOpen}
               onClose={handleSidebarOnClose}
+              customActiveChannel={channelId}
             />
 
             <ChatChannel
@@ -76,6 +119,7 @@ export default function ChatPage() {
               hideChannelOnThread={!isLargeScreen}
             />
           </div>
+          <PushMessageListener />
         </Chat>
       </div>
       {/* This is the Chat
